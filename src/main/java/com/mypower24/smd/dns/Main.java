@@ -25,11 +25,9 @@ public class Main {
 
             while (true) {
                 Socket client = server.accept();
-                ServerConnection serverConnection = new ServerConnection(client);
                 Thread sthread = new Thread(new ServerConnection(client));
                 sthread.setName(client.getInetAddress().getHostAddress());
                 sthread.start();
-                SmdDns.getINSTANCE().addConnection(serverConnection);
             }
             
         } catch (IOException ex) {

@@ -4,8 +4,12 @@
  */
 package com.mypower24.smd.dns.entity;
 
+import com.mypower24.smd.rar.lib.TestRequest;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -31,29 +35,41 @@ public class SmdDns {
         return "Connected to SMD DNS";
     }
 
-    public String processMessage(String command) {
+    public String processMessage(TestRequest command, ServerConnection conn) {
         System.out.println("Processing Command: " + command);
+//        switch (command.getReqHeader()) {
+//            case val:
+//                
+//                break;
+//            default:
+//                throw new AssertionError();
+//        }
+//        conn.sendData(conn);
         //Command should send serverId here so that it can be set
-        return "Successfully Connected";
+        return "Message Processed";
     }
 
-    public boolean addConnection(ServerConnection conn) {
+    public ServerConnection addConnection(ServerConnection conn) {
         if (serConnList.contains(conn)) {
-            return false;
+            return null;
         }
         broadcastNewServer(conn);
         serConnList.add(conn);
-        return true;
+        return conn;
     }
 
     public boolean removeConnection(ServerConnection conn) {
         return serConnList.remove(conn);
     }
 
-    public void broadcastNewServer(ServerConnection conn) {
-        for (ServerConnection serverConnection : serConnList) {
-            serverConnection.sendData(conn);
-            conn.sendData(serverConnection);
-        }
+    public synchronized void broadcastNewServer(ServerConnection conn) {
+//        for (ServerConnection serverConnection : serConnList) {
+//            try {
+//                serverConnection.sendData(conn);
+//                conn.sendData(serverConnection);
+//            } catch (IOException ex) {
+//                Logger.getLogger(SmdDns.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        }
     }
 }

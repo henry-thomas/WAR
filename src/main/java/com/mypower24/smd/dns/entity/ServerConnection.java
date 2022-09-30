@@ -4,23 +4,30 @@
  */
 package com.mypower24.smd.dns.entity;
 
+import com.mypower24.smd.rar.lib.TestRequest;
+import com.mypower24.smd.rar.lib.TestResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author henry
  */
-public class ServerConnection implements Runnable {
+public class ServerConnection implements Runnable, Serializable {
 
     private String serverId;
     private int port;
     private String host;
     private Socket client;
-    private PrintWriter outWriter;
+    private ObjectOutputStream outWriter;
 
     public ServerConnection(Socket client) {
         this.client = client;
@@ -59,36 +66,43 @@ public class ServerConnection implements Runnable {
     public void setClient(Socket client) {
         this.client = client;
     }
-    
-    public void sendData(Object data){
-        outWriter.println(data);
+
+    public void sendData(TestResponse data) throws IOException {
+        outWriter.writeObject(data);
+        outWriter.flush();
     }
 
     @Override
     public void run() {
-        String inline;
-        String outline;
+        TestRequest inline;
+        TestResponse outline;
+
+        ObjectInputStream ois;
         try {
             SmdDns smdDns = SmdDns.getINSTANCE();
-            outWriter = new PrintWriter(client.getOutputStream(), true);
+            outWriter = new ObjectOutputStream(client.getOutputStream());
             InputStreamReader isr = new InputStreamReader(client.getInputStream());
             BufferedReader in = new BufferedReader(isr);
 
+            ois = new ObjectInputStream(client.getInputStream());
             System.out.println("Client connected.");
-            outWriter.println(smdDns.greetOnConnection());
+            outWriter.writeObject(new TestResponse(smdDns.greetOnConnection()));
+            smdDns.addConnection(this);
 
-            while ((inline = in.readLine()) != null) {
+            while ((inline = (TestRequest) ois.readObject()) != null) {
                 System.out.println("Received: " + inline);
-                outline = smdDns.processMessage(inline);
-                outWriter.println(outline);
-                
+                String processMessage = smdDns.processMessage(inline, this);
+                sendData(new TestResponse(processMessage));
+
                 //Handle this in the closing lifecycle hook in resource adapter
-                if (outline.compareTo("closing") == 0) {
+                if (processMessage.compareTo("closing") == 0) {
                     break;
                 }
             }
+            smdDns.removeConnection(this);
             client.close();
-        } catch (IOException ex) {
+        } catch (IOException | ClassNotFoundException ex) {
+            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }
