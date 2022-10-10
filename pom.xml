@@ -5,13 +5,6 @@
     <artifactId>tetraquark</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <dependencies>
-        <dependency>
-            <groupId>com.mypower24.smd.rar.lib</groupId>
-            <artifactId>smd-rar-lib</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>9</maven.compiler.source>
@@ -19,4 +12,11 @@
         <exec.mainClass>com.mypower24.smd.dns.SmdDns</exec.mainClass>
     </properties>
     <name>jcluster-broker</name>
+    <dependencies>
+        <dependency>
+            <groupId>com.mypower24.smd.rar.lib</groupId>
+            <artifactId>jcluster-lib</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
 </project>

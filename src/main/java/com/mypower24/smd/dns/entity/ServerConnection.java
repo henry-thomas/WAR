@@ -4,14 +4,12 @@
  */
 package com.mypower24.smd.dns.entity;
 
-import com.mypower24.smd.rar.lib.TestRequest;
-import com.mypower24.smd.rar.lib.TestResponse;
+import com.mypower24.smd.rar.lib.JcMessage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.Socket;
 import java.util.logging.Level;
@@ -28,11 +26,18 @@ public class ServerConnection implements Runnable, Serializable {
     private String host;
     private Socket client;
     private ObjectOutputStream outWriter;
+    private static int parallelConnectionCount = 0;
+    private int paralConnWaterMark = 0;
 
     public ServerConnection(Socket client) {
         this.client = client;
         this.port = client.getPort();
         this.host = client.getInetAddress().getHostAddress();
+        parallelConnectionCount++;
+        if (parallelConnectionCount > paralConnWaterMark) {
+            paralConnWaterMark = parallelConnectionCount;
+            System.out.println("Number of connections reached: " + paralConnWaterMark);
+        }
     }
 
     public String getServerId() {
@@ -67,42 +72,41 @@ public class ServerConnection implements Runnable, Serializable {
         this.client = client;
     }
 
-    public void sendData(TestResponse data) throws IOException {
+    public void sendData(JcMessage data) throws IOException {
         outWriter.writeObject(data);
         outWriter.flush();
     }
 
     @Override
     public void run() {
-        TestRequest inline;
-        TestResponse outline;
+        JcMessage inline;
+        JcMessage outline;
 
         ObjectInputStream ois;
         try {
-            SmdDns smdDns = SmdDns.getINSTANCE();
+            JclusterBroker broker = JclusterBroker.getINSTANCE();
             outWriter = new ObjectOutputStream(client.getOutputStream());
             InputStreamReader isr = new InputStreamReader(client.getInputStream());
             BufferedReader in = new BufferedReader(isr);
 
             ois = new ObjectInputStream(client.getInputStream());
             System.out.println("Client connected.");
-            outWriter.writeObject(new TestResponse(smdDns.greetOnConnection()));
-            smdDns.addConnection(this);
 
-            while ((inline = (TestRequest) ois.readObject()) != null) {
-                System.out.println("Received: " + inline);
-                String processMessage = smdDns.processMessage(inline, this);
-                sendData(new TestResponse(processMessage));
+            while ((inline = (JcMessage) ois.readObject()) != null) {
 
-                //Handle this in the closing lifecycle hook in resource adapter
-                if (processMessage.compareTo("closing") == 0) {
-                    break;
-                }
+//                System.out.println("Received: " + inline);
+                JcMessage processMessage = broker.processMessage(inline, this);
+                sendData(processMessage);
+                //Handle closing in the closing lifecycle hook in resource adapter
             }
-            smdDns.removeConnection(this);
+
             client.close();
+            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, "Closing connection: {0}", client.getPort());
+
+//            JclusterBroker.getINSTANCE().removeConnection(this);
         } catch (IOException | ClassNotFoundException ex) {
-            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ServerConnection.class.getName()).log(Level.SEVERE, "Closing connection: {0}", ex.getClass());
         }
+        parallelConnectionCount--;
     }
 }

@@ -5,10 +5,11 @@
 package com.mypower24.smd.dns;
 
 import com.mypower24.smd.dns.entity.ServerConnection;
-import com.mypower24.smd.dns.entity.SmdDns;
+import com.mypower24.smd.dns.entity.JclusterBroker;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,18 +21,20 @@ public class Main {
 
     public static void main(String[] args) {
         try {
+
             ServerSocket server = new ServerSocket(4004);
-            System.out.println("SMD DNS Open on port 4004");
+            System.out.println("JCluster Broker Open on port 4004");
 
             while (true) {
                 Socket client = server.accept();
                 Thread sthread = new Thread(new ServerConnection(client));
-                sthread.setName(client.getInetAddress().getHostAddress());
+                sthread.setName(client.getInetAddress().getHostAddress() + "-" + client.getPort());
                 sthread.start();
+
             }
-            
+
         } catch (IOException ex) {
-            Logger.getLogger(SmdDns.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(JclusterBroker.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }
