@@ -2,15 +2,13 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Project/Maven2/JavaApp/src/main/java/${packagePath}/${mainClassName}.java to edit this template
  */
-package com.mypower24.smd.dns.entity;
+package com.mypower24.smd.jcluster.entity;
 
 import com.mypower24.smd.rar.lib.JcMessage;
-import com.mypower24.smd.rar.lib.JcResponseMsg;
 import com.mypower24.smd.rar.lib.JcServerDescriptor;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,8 +42,8 @@ public class JclusterBroker {
 //        System.out.println("Processing Command: " + request.getCommand());
 //        JcMessage resp = new JcResponseMsg(request.getRequestId());
 
-        switch (request.getCommand()) {
-            case "Hello": {
+        switch (request.getMsgType()) {
+            case INIT: {
                 JcServerDescriptor desc = (JcServerDescriptor) request.getData();
                 conn.setHost(desc.getServerAddress());
                 conn.setServerId(desc.getServerId());
@@ -59,7 +57,11 @@ public class JclusterBroker {
                 request.setCommand("Connected");
                 break;
             }
-            case "test": {
+            case REQUEST: {
+               
+                break;
+            }
+            case TEST: {
                 request.setCommand("processMessage");
                 request.setInfo("response to request: " + request.getRequestId());
                 request.setDstServer(request.getSrcServer());
